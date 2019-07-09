@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <import resource="applicationContext-dao.xml"></import>
+    <import resource="applicationContext-servcie.xml"></import>
+
+    <context:component-scan base-package="com.cxt.supermarket.service" />
+    <!-- 配置解析属性文件 -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="location" value="classpath:config/database.properties" />
+    </bean>
+    <!--配置数据源-->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="${jdbc.driverClassName}"></property>
+        <property name="url" value="${jdbc.url}"></property>
+        <property name="username" value="${jdbc.userName}"></property>
+        <property name="password" value="${jdbc.password}"></property>
+        <property name="initialSize" value="${jdbc.initialSize}" ></property>
+        <property name="maxActive" value="${jdbc.maxActive}"></property>
+        <property name="maxIdle" value="${jdbc.maxIdle}"></property>
+        <property name="maxWait" value="${jdbc.maxWait}"></property>
+    </bean>
+    <!--配置SqlSessionFactory-->
+    <bean id="sessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"></property>
+        <!--MyBatis核心配置文件路径-->
+        <property name="configLocation" value="classpath:config/mybatis-config.xml"></property>
+        <!-- SQL映射文件的路径 -->
+        <property name="mapperLocations">
+            <list>
+                <value>classpath:mapper/UserMapper.xml</value>
+
+            </list>
+        </property>
+    </bean>
+    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg name="sqlSessionFactory" ref="sessionFactory"></constructor-arg>
+    </bean>
+
+    <!-- 配置事务管理器 -->
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+
+
+    <!-- 配置事务管理规则（相当于AOP中的增强处理Bean）-->
+    <tx:advice id="txAdvice" transaction-manager="txManager">
+        <tx:attributes>
+            <tx:method name="add*" propagation="REQUIRED" isolation="DEFAULT" read-only="false" />
+            <tx:method name="insert*" propagation="REQUIRED" isolation="DEFAULT" read-only="false" />
+            <tx:method name="save*" propagation="REQUIRED" isolation="DEFAULT" read-only="false" />
+            <tx:method name="update*" propagation="REQUIRED" isolation="DEFAULT" read-only="false" />
+            <tx:method name="modify*" propagation="REQUIRED" isolation="DEFAULT" read-only="false" />
+            <tx:method name="del*" propagation="REQUIRED" isolation="DEFAULT" read-only="false" />
+            <tx:method name="get*" propagation="SUPPORTS" isolation="DEFAULT" read-only="true" />
+            <tx:method name="find*" propagation="SUPPORTS" isolation="DEFAULT" read-only="true" />
+            <tx:method name="serach*" propagation="SUPPORTS" isolation="DEFAULT" read-only="true" />
+            <tx:method name="list*" propagation="SUPPORTS" isolation="DEFAULT" read-only="true" />
+            <tx:method name="query*" propagation="SUPPORTS" isolation="DEFAULT" read-only="true" />
+            <tx:method name="*" propagation="REQUIRED" isolation="DEFAULT" read-only="false" />
+        </tx:attributes>
+    </tx:advice>
+
+    <!-- 配置切入点，将增强处理Bean和切入点组合成切面 -->
+   <!-- <aop:config>
+        <aop:pointcut id="serviceMethod" expression="execution(* cn.sunwu.ssmdemo.service.*.*(..))"></aop:pointcut>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="serviceMethod"></aop:advisor>
+    </aop:config>-->
+    <tx:annotation-driven transaction-manager="txManager"></tx:annotation-driven>
+</beans>
